@@ -1,0 +1,23 @@
+# Secrets
+.env
+
+# Runtime data
+.data/
+.backups/
+archive/
+
+# Logs
+*.log
+logs/
+**/logs/
+
+# Temporary files
+*.tmp
+*.swp
+docs/AGENTS.md
+docs/hello-world.md
+docs/NOTES.md
+docs/RELEASE.md
+chat.json
+.archive
+docs/snippets/dspace-tracker.js
