@@ -292,3 +292,11 @@
 - **Fix:** У `.github/workflows/ci-checks.yml` переведено підключення на стандартний socket `/var/run/tailscale/tailscaled.sock`, додано `systemctl start tailscaled`, fallback запуск `tailscaled`, та явний readiness-loop (40s).
 - **Fix:** Додано діагностику при timeout (`systemctl status`, `journalctl`, `tail /tmp/tailscaled.log`) і cleanup `tailscale down` через стандартний socket.
 - **Verification:** Workflow YAML валідний (`yaml_parse=ok`), diagnostics без помилок.
+
+## 2026-03-19 — CD hotfix: remove dual tailscaled start, add hardware-attestation fail-fast hint
+
+- **Context:** CD падав із двома симптомами: `address already in use` для `/var/run/tailscale/tailscaled.sock` та помилка політики hardware attestation (`/dev/tpmrm0` відсутній у GitHub-hosted runner).
+- **Root cause:** У workflow міг одночасно запускатися systemd `tailscaled` і ручний `tailscaled` процес; додатково `TAILSCALE_EPHEMERAL_AUTH_KEY` підпадав під policy, що вимагає hardware attestation.
+- **Fix:** У `.github/workflows/ci-checks.yml` прибрано ручний запуск `tailscaled`; залишено лише `systemctl start tailscaled` + readiness check сокета.
+- **Fix:** Додано fail-fast обробку помилки `tailscale up` з чіткою підказкою: для GitHub-hosted runner потрібен CI-ключ/політика без mandatory hardware attestation або self-hosted runner з TPM.
+- **Verification:** Workflow YAML валідний (`yaml_parse=ok`), diagnostics без помилок.
