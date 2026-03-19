@@ -268,3 +268,19 @@
 - **Context:** `ci-checks` падав на SC1090 у скриптах з динамічним `source "$ENV_FILE"`.
 - **Fix:** Додано `# shellcheck source=/dev/null` перед динамічним `source/. "$ENV_FILE"` у: `scripts/check-disk.sh`, `scripts/verify-env.sh`, `scripts/restore.sh`, `scripts/backup.sh`, `scripts/apply-matomo-config.sh`, `scripts/init-volumes.sh`.
 - **Verification:** Локальний прогін `shellcheck` по `scripts/*.sh` повернув `shellcheck_rc=0`.
+
+## 2026-03-19 — Added `cd-deploy` job via Tailscale ephemeral auth key
+
+- **Context:** Після інкрементного кроку з `ci-checks` додано окремий CD-етап, що запускається тільки після успішного CI.
+- **Change:** У `.github/workflows/ci-checks.yml` додано job `cd-deploy` з `needs: ci-checks` і `if: github.event_name == 'push'`.
+- **Change:** Деплой виконується через Tailnet: інсталяція Tailscale, підключення через `TAILSCALE_EPHEMERAL_AUTH_KEY`, SSH на віддалений хост і застосування деплой-послідовності (`git checkout $GITHUB_SHA`, `verify-env`, `init-volumes`, `docker compose up -d`, `apply-matomo-config`).
+- **DevSecOps:** Додано fail-fast валідацію required secrets (`TAILSCALE_EPHEMERAL_AUTH_KEY`, `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_PRIVATE_KEY`) і `Disconnect Tailscale` у `always()`.
+- **Verification:** Workflow YAML валідний (`yaml_parse=ok`), diagnostics без помилок.
+
+## 2026-03-19 — Deploy triggers extended: PR to main + push tag `vX.X.X`
+
+- **Context:** Потрібно запускати деплой не лише на push, а також на `pull_request` у `main` і на release-теги формату `vX.X.X`.
+- **Change:** У `.github/workflows/ci-checks.yml` оновлено `on`-тригери: `pull_request.branches: [main]` та `push.tags: ['v*.*.*']`.
+- **Change:** У `cd-deploy.if` додано явні умови для: push у `main/master`, push тегів `refs/tags/v*`, і PR у `main` (лише якщо PR з того ж репозиторію).
+- **Change:** Для PR-деплою `DEPLOY_REF` береться з `github.event.pull_request.head.sha`, для push — з `github.sha`.
+- **Verification:** Workflow проходить YAML-перевірку (`yaml_parse=ok`), diagnostics без помилок.

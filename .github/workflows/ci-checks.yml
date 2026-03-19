@@ -3,10 +3,14 @@ name: CI Checks
 on:
   push:
     branches: [ main, master ]
+    tags:
+      - 'v*.*.*'
   pull_request:
+    branches: [ main ]
 
 permissions:
   contents: read
+  packages: read
 
 concurrency:
   group: ci-checks-${{ github.ref }}
@@ -50,3 +54,99 @@ jobs:
 
       - name: Check ports policy
         run: bash ./scripts/check-ports-policy.sh docker-compose.yaml
+
+  cd-deploy:
+    name: cd-deploy
+    needs: ci-checks
+    if: |
+      (github.event_name == 'push' && (
+        github.ref == 'refs/heads/main' ||
+        github.ref == 'refs/heads/master' ||
+        startsWith(github.ref, 'refs/tags/v')
+      )) ||
+      (github.event_name == 'pull_request' &&
+        github.base_ref == 'main' &&
+        github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@main
+
+      - name: Validate required secrets
+        env:
+          TAILSCALE_EPHEMERAL_AUTH_KEY: ${{ secrets.TAILSCALE_EPHEMERAL_AUTH_KEY }}
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+          SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          for key in TAILSCALE_EPHEMERAL_AUTH_KEY SERVER_HOST SERVER_USER SERVER_SSH_KEY; do
+            if [[ -z "${!key:-}" ]]; then
+              echo "ERROR: required secret is missing: $key"
+              exit 1
+            fi
+          done
+
+      - name: Configure SSH key
+        env:
+          SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          install -m 700 -d ~/.ssh
+          umask 177
+          printf '%s\n' "$SERVER_SSH_KEY" > ~/.ssh/id_ed25519
+          ssh-keyscan -H "${{ secrets.SERVER_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Install Tailscale
+        run: |
+          set -euo pipefail
+          curl -fsSL https://tailscale.com/install.sh | sh
+
+      - name: Connect to Tailnet
+        env:
+          TAILSCALE_EPHEMERAL_AUTH_KEY: ${{ secrets.TAILSCALE_EPHEMERAL_AUTH_KEY }}
+        run: |
+          set -euo pipefail
+          sudo tailscaled --state=mem: --socket=/tmp/tailscaled.sock --statedir=/tmp >/tmp/tailscaled.log 2>&1 &
+          for _ in $(seq 1 30); do
+            if sudo tailscale --socket=/tmp/tailscaled.sock status >/dev/null 2>&1; then
+              break
+            fi
+            sleep 1
+          done
+          sudo tailscale --socket=/tmp/tailscaled.sock up \
+            --authkey "$TAILSCALE_EPHEMERAL_AUTH_KEY" \
+            --accept-routes=true \
+            --accept-dns=false \
+            --hostname "gha-matomo-${{ github.run_id }}"
+          sudo tailscale --socket=/tmp/tailscaled.sock status
+
+      - name: Deploy on remote host
+        env:
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+          DEPLOY_PROJECT_DIR: ${{ vars.DEPLOY_PROJECT_DIR }}
+          DEPLOY_REF: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          target_path="${DEPLOY_PROJECT_DIR:-/home/pinokew/Matomo-analytics}"
+
+          ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new \
+            "${SERVER_USER}@${SERVER_HOST}" \
+            "DEPLOY_REF='${DEPLOY_REF}' DEPLOY_PROJECT_DIR='${target_path}' bash -s" <<'EOF'
+          set -euo pipefail
+          cd "$DEPLOY_PROJECT_DIR"
+          git fetch --all --prune
+          git checkout "$DEPLOY_REF"
+          bash ./scripts/verify-env.sh .env
+          bash ./scripts/init-volumes.sh .env
+          docker compose -f docker-compose.yaml up -d --remove-orphans
+          bash ./scripts/apply-matomo-config.sh .env
+          docker compose -f docker-compose.yaml ps
+          EOF
+
+      - name: Disconnect Tailscale
+        if: always()
+        run: |
+          sudo tailscale --socket=/tmp/tailscaled.sock down || true
