@@ -116,7 +116,7 @@ jobs:
         env:
           SERVER_HOST: ${{ secrets.SERVER_HOST }}
           SERVER_USER: ${{ secrets.SERVER_USER }}
-          DEPLOY_PROJECT_DIR: ${{ vars.DEPLOY_PROJECT_DIR }}
+          DEPLOY_PROJECT_DIR: ${{ secrets.DEPLOY_PROJECT_DIR }}
           DEPLOY_REF: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
         run: |
           set -euo pipefail
@@ -126,6 +126,14 @@ jobs:
             "${SERVER_USER}@${SERVER_HOST}" \
             "DEPLOY_REF='${DEPLOY_REF}' DEPLOY_PROJECT_DIR='${target_path}' bash -s" <<'EOF'
           set -euo pipefail
+          if [[ -z "${DEPLOY_PROJECT_DIR:-}" ]]; then
+            echo "ERROR: DEPLOY_PROJECT_DIR is empty"
+            exit 1
+          fi
+          if [[ ! -d "$DEPLOY_PROJECT_DIR/.git" ]]; then
+            echo "ERROR: DEPLOY_PROJECT_DIR is not a git repository: $DEPLOY_PROJECT_DIR"
+            exit 1
+          fi
           cd "$DEPLOY_PROJECT_DIR"
           git fetch --all --prune
           git checkout "$DEPLOY_REF"
