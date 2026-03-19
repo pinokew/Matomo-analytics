@@ -307,3 +307,18 @@
 - **Change:** У `.github/workflows/ci-checks.yml` видалено кроки ручного `Install Tailscale`, `Connect to Tailnet` (через `tailscaled/tailscale up`) і `Disconnect Tailscale`.
 - **Change:** Додано крок `Connect to Tailscale` через `uses: tailscale/github-action@v4` з `authkey: ${{ secrets.TAILSCALE_EPHEMERAL_AUTH_KEY }}`.
 - **Verification:** Workflow YAML валідний (`yaml_parse=ok`).
+
+## 2026-03-19 — Go-Live docs: privacy/compliance document added
+
+- **Context:** У Phase 7 Go-Live Checklist лишався невизначений документаційний пункт `docs/privacy-compliance.md`.
+- **Change:** Додано `docs/privacy-compliance.md` з privacy-first baseline для Matomo: cookieless tracking, IP anonymization, DNT, retention policy, MATOMO_API_TOKEN handling та покроковою Go-Live валідацією.
+- **Change:** У `docs/ROADMAP.md` пункт `docs/privacy-compliance.md заповнено` позначено як виконаний.
+- **Verification:** Документ узгоджено з `docs/ROADMAP.md`, `docs/PRD.md`, `.env.example`, `scripts/verify-env.sh` і changelog-записом про перевірені privacy-параметри (`forceCookielessTracking=1`, `ipAddressMaskLength=2`, `ignore_visits_do_not_track=1`, retention 12 months / archives never).
+
+## 2026-03-19 — Go-Live check verified: matomo.js response time and cache header
+
+- **Context:** У Phase 7 Go-Live Checklist залишались непідтвердженими два технічні пункти для `matomo.js`.
+- **Verification:** Виконано live-перевірку на правильному production-домені `https://matomo.pinokew.buzz/matomo.js` з браузерного контексту.
+- **Verification:** Отримано `HTTP 200`, `Cache-Control: max-age=14400`, `Content-Type: text/javascript`, `Content-Length: 22211`.
+- **Verification:** Час відповіді склав приблизно `14.9 ms`, що вкладається в вимогу `< 200 ms`.
+- **Change:** У `docs/ROADMAP.md` пункти `matomo.js завантажується < 200ms` і `Cache-Control header присутній для matomo.js` позначено як виконані.

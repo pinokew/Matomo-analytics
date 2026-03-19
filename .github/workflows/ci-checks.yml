@@ -5,8 +5,14 @@ on:
     branches: [ main, master ]
     tags:
       - 'v*.*.*'
+    paths-ignore:
+      - '**/*.md'
+      - '.env.example'
   pull_request:
     branches: [ main ]
+    paths-ignore:
+      - '**/*.md'
+      - '.env.example'
 
 permissions:
   contents: read
@@ -114,7 +120,7 @@ jobs:
           DEPLOY_REF: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
         run: |
           set -euo pipefail
-          target_path="${DEPLOY_PROJECT_DIR:-/home/pinokew/Matomo-analytics}"
+          target_path="${DEPLOY_PROJECT_DIR}"
 
           ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new \
             "${SERVER_USER}@${SERVER_HOST}" \

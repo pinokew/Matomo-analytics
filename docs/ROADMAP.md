@@ -469,50 +469,50 @@ Custom Reports (авторська статистика), Goals & Conversions, C
 
 #### **🔒 Security & Privacy**
 
-* [ ] Відсутні \_pk\_\* cookies у DevTools після відкриття OPAC  
-* [ ] IP у Matomo Real-Time відображається як x.x.0.0  
-* [ ] Do Not Track: Enabled  
-* [ ] Жодного відкритого порту matomo-стеку на хості  
-* [ ] Зовнішній ingress/tunnel шар на сервері маршрутизує `analytics.mylibrary.edu` на `http://traefik:80` без помилок  
-* [ ] Traefik router для analytics.mylibrary.edu активний і віддає Matomo через labels  
-* [ ] .env не в git history  
-* [ ] Gitleaks в CI зелений  
-* [ ] SSO: вхід через MS365 акаунт успішний  
-* [ ] Локальний fallback-адмін задокументовано та перевірено
+* [x] Відсутні \_pk\_\* cookies у DevTools після відкриття OPAC  
+* [x] IP у Matomo Real-Time відображається як x.x.0.0  
+* [x] Do Not Track: Enabled  
+* [x] Жодного відкритого порту matomo-стеку на хості  
+* [x] Зовнішній ingress/tunnel шар на сервері маршрутизує `analytics.mylibrary.edu` на `http://traefik:80` без помилок  
+* [x] Traefik router для analytics.mylibrary.edu активний і віддає Matomo через labels  
+* [x] .env не в git history  
+* [x] Gitleaks в CI зелений  
+* [x] SSO: вхід через MS365 акаунт успішний  
+* [x] Локальний fallback-адмін задокументовано та перевірено
 
 #### **⚡ Performance & Archiving**
 
-* [ ] matomo.js завантажується \< 200ms (DevTools → Network)  
-* [ ] Cache-Control header присутній для matomo.js  
-* [ ] Browser triggered archiving: **Disabled**  
+* [x] matomo.js завантажується \< 200ms (DevTools → Network)  
+* [x] Cache-Control header присутній для matomo.js  
+* [x] Browser triggered archiving: **Disabled**  
 * [x] docker compose logs matomo-cron містить Done archiving\!
 
 #### **📊 Tracking**
 
-* [ ] Koha OPAC: відвідувач з'являється в Matomo Real-Time  
-* [ ] Пошук ?q=test у Koha → Matomo Site Search  
-* [ ] DSpace: Bitstream клік → Matomo Downloads  
-* [ ] Custom Dimension 1 (Device Type) записується
+* [x] Koha OPAC: відвідувач з'являється в Matomo Real-Time  
+* [x] Пошук ?q=test у Koha → Matomo Site Search  
+* [x] DSpace: Bitstream клік → Matomo Downloads  
+* [x] Custom Dimension 1 (Device Type) записується
 
 #### **💾 Data & Backup**
 
-* [ ] Backup: .sql.gz у $BACKUP\_DIR \+ підтверджено у Google Drive  
-* [ ] backup.sh \--dry-run проходить  
-* [ ] Data Retention: Raw logs \= 12 months, Archives \= Never  
-* [ ] check-disk.sh → ✅ для всіх volumes
+* [x] Backup: .sql.gz у $BACKUP\_DIR \+ підтверджено у Google Drive  
+* [x] backup.sh \--dry-run проходить  
+* [x] Data Retention: Raw logs \= 12 months, Archives \= Never  
+* [x] check-disk.sh → ✅ для всіх volumes
 
 #### **📄 CSP**
 
-* [ ] Koha OPAC: нуль CSP violations у DevTools  
-* [ ] DSpace: нуль CSP violations у DevTools
+* [x] Koha OPAC: нуль CSP violations у DevTools  
+* [x] DSpace: нуль CSP violations у DevTools
 
 #### **📚 Documentation**
 
-* [ ] docs/architecture.md заповнено  
-* [ ] docs/deployment.md заповнено  
-* [ ] docs/backup-restore.md заповнено  
-* [ ] docs/privacy-compliance.md заповнено  
-* [ ] docs/snippets/koha-opac-tracker.js актуальна
+* [x] docs/architecture.md заповнено  
+* [x] docs/deployment.md заповнено  
+* [x] docs/backup-restore.md заповнено  
+* [x] docs/privacy-compliance.md заповнено  
+* [x] docs/snippets/koha-opac-tracker.js актуальна
 
 ## **8\. Post-Prod Roadmap**
 
