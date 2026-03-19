@@ -262,3 +262,9 @@
 - **Change:** Додано GitHub Actions best-practice елементи: `permissions: contents: read` та `concurrency` (cancel in-progress на тому ж ref).
 - **DevSecOps:** Залишено лише ключові перевірки без перевантаження пайплайна: secret scan (`gitleaks`), shell lint, dockerfile lint, compose/policy checks.
 - **Note:** Для `uses:` у GitHub Actions тег `@latest` не підтримується (не резолвиться), тому використано валідні стабільні теги (`actions/checkout@v4`, `gitleaks-action@v2`, `action-shellcheck@2.0.0`). Для docker image в hadolint використано `hadolint/hadolint:latest`.
+
+## 2026-03-19 — CI fix: ShellCheck SC1090 resolved for env sourcing
+
+- **Context:** `ci-checks` падав на SC1090 у скриптах з динамічним `source "$ENV_FILE"`.
+- **Fix:** Додано `# shellcheck source=/dev/null` перед динамічним `source/. "$ENV_FILE"` у: `scripts/check-disk.sh`, `scripts/verify-env.sh`, `scripts/restore.sh`, `scripts/backup.sh`, `scripts/apply-matomo-config.sh`, `scripts/init-volumes.sh`.
+- **Verification:** Локальний прогін `shellcheck` по `scripts/*.sh` повернув `shellcheck_rc=0`.

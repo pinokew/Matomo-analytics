@@ -45,6 +45,7 @@ if [[ ! -f "$ENV_FILE" ]]; then
   exit 1
 fi
 
+# shellcheck source=/dev/null
 source "$ENV_FILE"
 
 NODE_EXPORTER_TEXTFILE_DIR="${NODE_EXPORTER_TEXTFILE_DIR:-./.data/node-exporter-textfile}"

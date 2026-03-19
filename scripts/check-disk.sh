@@ -8,6 +8,7 @@ if [[ ! -f "$ENV_FILE" ]]; then
   exit 2
 fi
 
+# shellcheck source=/dev/null
 source "$ENV_FILE"
 
 warn_threshold="${DISK_WARN_THRESHOLD:-80}"

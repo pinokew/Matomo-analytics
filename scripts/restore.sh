@@ -53,6 +53,7 @@ if [[ ! -f "$BACKUP_FILE" ]]; then
   exit 1
 fi
 
+# shellcheck source=/dev/null
 source "$ENV_FILE"
 
 required_vars=(
