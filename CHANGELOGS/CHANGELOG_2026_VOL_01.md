@@ -284,3 +284,11 @@
 - **Change:** У `cd-deploy.if` додано явні умови для: push у `main/master`, push тегів `refs/tags/v*`, і PR у `main` (лише якщо PR з того ж репозиторію).
 - **Change:** Для PR-деплою `DEPLOY_REF` береться з `github.event.pull_request.head.sha`, для push — з `github.sha`.
 - **Verification:** Workflow проходить YAML-перевірку (`yaml_parse=ok`), diagnostics без помилок.
+
+## 2026-03-19 — CD fix: Tailscale daemon readiness and socket handling hardened
+
+- **Context:** `cd-deploy` падав на кроці `tailscale up` з помилкою `no such file or directory` для сокета `/tmp/tailscaled.sock`.
+- **Root cause:** Гонка старту `tailscaled` + нестабільний кастомний socket path у раннері GitHub Actions.
+- **Fix:** У `.github/workflows/ci-checks.yml` переведено підключення на стандартний socket `/var/run/tailscale/tailscaled.sock`, додано `systemctl start tailscaled`, fallback запуск `tailscaled`, та явний readiness-loop (40s).
+- **Fix:** Додано діагностику при timeout (`systemctl status`, `journalctl`, `tail /tmp/tailscaled.log`) і cleanup `tailscale down` через стандартний socket.
+- **Verification:** Workflow YAML валідний (`yaml_parse=ok`), diagnostics без помилок.
