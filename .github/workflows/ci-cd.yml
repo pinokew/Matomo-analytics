@@ -8,26 +8,30 @@ on:
     paths-ignore:
       - '**/*.md'
       - '.env.example'
+      - '.gitignore'
   pull_request:
     branches: [ main ]
     paths-ignore:
       - '**/*.md'
       - '.env.example'
+      - '.gitignore'
 
 permissions:
   contents: read
   packages: read
 
-concurrency:
-  group: ci-checks-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   ci-checks:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    concurrency:
+      group: ci-checks-${{ github.ref }}
+      cancel-in-progress: true
     steps:
       - name: Checkout
         uses: actions/checkout@main
+        with:
+          fetch-depth: 0
 
       - name: Run ShellCheck
         uses: ludeeus/action-shellcheck@master
@@ -61,19 +65,52 @@ jobs:
       - name: Check ports policy
         run: bash ./scripts/check-ports-policy.sh docker-compose.yaml
 
+  dependency-review:
+    name: dependency-review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Dependency review
+        uses: actions/dependency-review-action@v4
+
+  trivy-scan:
+    name: trivy-scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@main
+
+      - name: Run Trivy filesystem scan
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln,misconfig,secret
+          vuln-type: os,library
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          format: table
+          exit-code: 1
+
   cd-deploy:
     name: cd-deploy
-    needs: ci-checks
+    needs: [ci-checks, trivy-scan]
     if: |
-      (github.event_name == 'push' && (
+      github.event_name == 'push' && (
         github.ref == 'refs/heads/main' ||
         github.ref == 'refs/heads/master' ||
         startsWith(github.ref, 'refs/tags/v')
-      )) ||
-      (github.event_name == 'pull_request' &&
-        github.base_ref == 'main' &&
-        github.event.pull_request.head.repo.full_name == github.repository)
+      )
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    concurrency:
+      group: cd-deploy-production
+      cancel-in-progress: false
     environment: production
     steps:
       - name: Checkout
@@ -86,24 +123,28 @@ jobs:
           SERVER_HOST: ${{ secrets.SERVER_HOST }}
           SERVER_USER: ${{ secrets.SERVER_USER }}
           SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+          SSH_HOST_KEY_PUB: ${{ secrets.SSH_HOST_KEY_PUB }}
         run: |
           set -euo pipefail
-          for key in TS_OAUTH_CLIENT_ID TS_OAUTH_SECRET SERVER_HOST SERVER_USER SERVER_SSH_KEY; do
+          for key in TS_OAUTH_CLIENT_ID TS_OAUTH_SECRET SERVER_HOST SERVER_USER SERVER_SSH_KEY SSH_HOST_KEY_PUB; do
             if [[ -z "${!key:-}" ]]; then
               echo "ERROR: required secret is missing: $key"
               exit 1
             fi
           done
 
-      - name: Configure SSH key
+      - name: Configure SSH key and known_hosts
         env:
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
           SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+          SSH_HOST_KEY_PUB: ${{ secrets.SSH_HOST_KEY_PUB }}
         run: |
           set -euo pipefail
           install -m 700 -d ~/.ssh
           umask 177
           printf '%s\n' "$SERVER_SSH_KEY" > ~/.ssh/id_ed25519
-          ssh-keyscan -H "${{ secrets.SERVER_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null || true
+          printf '%s %s\n' "$SERVER_HOST" "$SSH_HOST_KEY_PUB" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
 
       - name: Connect to Tailscale
         uses: tailscale/github-action@main
@@ -117,12 +158,12 @@ jobs:
           SERVER_HOST: ${{ secrets.SERVER_HOST }}
           SERVER_USER: ${{ secrets.SERVER_USER }}
           DEPLOY_PROJECT_DIR: ${{ secrets.DEPLOY_PROJECT_DIR }}
-          DEPLOY_REF: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          DEPLOY_REF: ${{ github.sha }}
         run: |
           set -euo pipefail
           target_path="${DEPLOY_PROJECT_DIR}"
 
-          ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new \
+          ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=~/.ssh/known_hosts \
             "${SERVER_USER}@${SERVER_HOST}" \
             "DEPLOY_REF='${DEPLOY_REF}' DEPLOY_PROJECT_DIR='${target_path}' bash -s" <<'EOF'
           set -euo pipefail
@@ -143,4 +184,3 @@ jobs:
           bash ./scripts/apply-matomo-config.sh .env
           docker compose -f docker-compose.yaml ps
           EOF
-
