@@ -112,16 +112,16 @@ services:
 secrets:
   app_env_payload:
     external: true
-    name: ${MATOMO_APP_ENV_SECRET_NAME:-matomo_app_env_payload_dev_v1}
+    name: ${MATOMO_APP_ENV_SECRET_NAME}
   matomo_api_token:
     external: true
-    name: ${MATOMO_API_TOKEN_SECRET_NAME:-matomo_api_token_dev_v1}
+    name: ${MATOMO_API_TOKEN_SECRET_NAME}
   matomo_db_password:
     external: true
-    name: ${MATOMO_DB_PASSWORD_SECRET_NAME:-matomo_db_password_dev_v1}
+    name: ${MATOMO_DB_PASSWORD_SECRET_NAME}
   matomo_db_root_password:
     external: true
-    name: ${MATOMO_DB_ROOT_PASSWORD_SECRET_NAME:-matomo_db_root_password_dev_v1}
+    name: ${MATOMO_DB_ROOT_PASSWORD_SECRET_NAME}
 
 networks:
   matomonet:
