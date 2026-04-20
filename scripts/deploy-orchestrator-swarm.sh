@@ -5,7 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 MODE="${ORCHESTRATOR_MODE:-noop}"
-STACK_NAME="${STACK_NAME:-koha}"
+STACK_NAME="${STACK_NAME:-matomo}"
 ENV_FILE="${ORCHESTRATOR_ENV_FILE:-/tmp/env.decrypted}"
 
 log() {

@@ -32,7 +32,7 @@ jobs:
       deploy: ${{ github.event_name == 'push' && github.ref == 'refs/heads/dev' }}
       use_ansible: true
       build_and_push_docker: false
-      docker_image_name: koha-deploy
+      docker_image_name: matomo-analytics
       orchestration_script_path: 'scripts/deploy-orchestrator-swarm.sh'
       infra_repo_path: '/opt/Ansible'
     secrets:
@@ -57,7 +57,7 @@ jobs:
       deploy: ${{ github.event_name == 'release' && startsWith(github.event.release.tag_name, 'v') }}
       use_ansible: true
       build_and_push_docker: false
-      docker_image_name: koha-deploy
+      docker_image_name: matomo-analytics
       orchestration_script_path: 'scripts/deploy-orchestrator-swarm.sh'
       infra_repo_path: '/opt/Ansible'
     secrets:
